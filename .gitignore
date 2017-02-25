@@ -1,0 +1,10 @@
+logs
+*.log
+npm-debug.log*
+node_modules
+lib
+src/**/*.d.ts
+src/**/*.js
+test/**/*.d.ts
+test/**/*.js
+test/cases/**/actual.css

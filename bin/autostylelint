@@ -1,0 +1,21 @@
+#! /usr/bin/env node
+
+var Runner = require('../lib/runner').Runner;
+
+/**
+ * Command line interface for autostylelint.
+ *
+ * Simple usage example:
+ * autostylelint file1 dir1
+ */
+
+var program = require('commander');
+
+program
+    .version(require('../package.json').version)
+    .usage('[options] <file ...>')
+    .description('A tool to automatically fix Stylelint complaints.')
+    .option('-c, --config [path]', 'configuration file path')
+    .parse(process.argv);
+
+new Runner(program).run();
