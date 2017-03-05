@@ -1,71 +1,77 @@
 const stylelint = require("stylelint/lib/standalone");
 
-import { IMutation } from "automutate/lib/mutation";
-import { IFileMutations, IMutationsProvider, IMutationsWave } from "automutate/lib/mutationsProvider";
+import { IMutationsProvider, IMutationsWave } from "automutate/lib/mutationsProvider";
 
-import { IStylelintFileResult, IStylelintSettings, IStylelintWarning } from "./stylelint";
+import { MutationsGrouper } from "./processing/mutationsGrouper";
+import { MutationsProcessor } from "./processing/mutationsProcessor";
+import { IFileFactory, FileFactory } from "./processing/fileFactory";
+import { ILocalFileMutations, IStylelintFileResult, IStylelintSettings } from "./stylelint";
+
+/**
+ * Settings to initialize a new StylelintMutationsProvider.
+ */
+export interface IStylelintMutationsProviderSettings {
+    /**
+     * Reads file contents.
+     */
+    fileFactory?: IFileFactory;
+
+    /**
+     * Settings to run stylelint.
+     */
+    stylelintSettings: IStylelintSettings;
+}
 
 /**
  * Provides waves of stylelint failure fixes as file mutations.
  */
 export class StylelintMutationsProvider implements IMutationsProvider {
     /**
+     * Groups stylelint file results into local file mutation suggestions.
+     */
+    private readonly mutationsGrouper: MutationsGrouper = new MutationsGrouper();
+
+    /**
+     * Converts stylelint's local file mutations into automutate file mutations.
+     */
+    private readonly mutationsProcessor: MutationsProcessor;
+
+    /**
      * Settings to run stylelint.
      */
-    private readonly settings: IStylelintSettings;
+    private readonly stylelintSettings: IStylelintSettings;
 
     /**
      * Initializes a new instance of the StylelintMutationsProvider class.
      * 
      * @param settings   Settings to run stylelint.
      */
-    public constructor(settings: IStylelintSettings) {
-        this.settings = {
-            ...settings,
+    public constructor(settings: IStylelintMutationsProviderSettings) {
+        this.stylelintSettings = {
+            ...settings.stylelintSettings,
             formatter: "json",
             suggestFixes: true
         };
+
+        this.mutationsProcessor = new MutationsProcessor(settings.fileFactory || new FileFactory());
     }
 
     /**
      * @returns A Promise for a wave of file mutations.
      */
     public async provide(): Promise<IMutationsWave> {
-        const stylelintOutput: any = await stylelint(this.settings);
+        const stylelintOutput: any = await stylelint(this.stylelintSettings);
 
         const complaints = stylelintOutput.results
             .filter((result: IStylelintFileResult): boolean => !!result.warnings.length);
 
+        const localMutations: ILocalFileMutations | undefined = this.mutationsGrouper.groupFileResults(complaints);
+        if (!localMutations) {
+            return {};
+        }
+
         return {
-            fileMutations: this.groupMutationsByFiles(complaints)
+            fileMutations: await this.mutationsProcessor.processLocalMutations(localMutations)
         };
-    }
-
-    /**
-     * Groups stylelint complaints into file mutations.
-     * 
-     * @param complaints   File complaints from stylelint.
-     * @returns File-grouped complaints, if any.
-     */
-    private groupMutationsByFiles(fileResults: IStylelintFileResult[]): IFileMutations | undefined {
-        if (!fileResults.length) {
-            return undefined;
-        }
-
-        const fileMutations: IFileMutations = {};
-        let hadSuggestions: boolean = false;
-
-        for (const fileResult of fileResults) {
-            const suggestedFixes: IMutation[] = fileResult.warnings
-                .filter((warning: IStylelintWarning): boolean => !!warning.suggestedFix)
-                .map((warning: IStylelintWarning): IMutation => warning.suggestedFix!);
-
-            if (suggestedFixes.length) {
-                hadSuggestions = true;
-                fileMutations[fileResult.source] = suggestedFixes;
-            }
-        }
-
-        return hadSuggestions ? fileMutations : undefined;
     }
 }

@@ -9,8 +9,10 @@ const testsFactory = new TestsFactory(
         const config = JSON.parse(fs.readFileSync(settingsFileName).toString());
 
         return new StylelintMutationsProvider({
-            files: [fileName],
-            config
+            stylelintSettings: {
+                config,
+                files: [fileName]
+            }
         });
     },
     {

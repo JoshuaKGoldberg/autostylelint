@@ -1,5 +1,3 @@
-import { IMutation } from "automutate/lib/mutation";
-
 /**
  * Standalone settings to run stylelint.
  */
@@ -79,10 +77,68 @@ export interface IStylelintWarning {
     /**
      * Suggested mutation(s) to fix the complaint.
      */
-    suggestedFix?: IMutation;
+    suggestedFix?: ILocalMutation;
 
     /**
      * Verbose complaint message.
      */
     text: string;
 };
+
+/**
+ * Mutations to be applied to files, keyed by file name.
+ * 
+ * @remarks This mirrors the automutate IMutation, but with line and column positions.
+ */
+export interface ILocalFileMutations {
+    [i: string]: ILocalMutation[];
+}
+
+/**
+ * Description of a mutation to be applied to a file.
+ * 
+ * @remarks This mirrors the automutate IMutation, but with line and column positions.
+ */
+export interface ILocalMutation {
+    /**
+     * Character positions this affects.
+     */
+    range: ILocalMutationRange;
+
+    /**
+     * Unique type name identifying this mutation.
+     */
+    type: string;
+}
+
+/**
+ * Character positions a mutation affects.
+ * 
+ * @remarks This mirrors the automutate IMutation, but with line and column positions.
+ */
+export interface ILocalMutationRange {
+    /**
+     * Inclusive character position this starts at.
+     */
+    begin: ILocalPosition;
+
+    /**
+     * Exclusive character position this ends at.
+     */
+    end?: ILocalPosition;
+}
+
+/**
+ * 
+ */
+export interface ILocalPosition {
+    /**
+     * 
+     */
+    column: number;
+
+    /**
+     * 
+     */
+    line: number;
+}

@@ -26,7 +26,9 @@ export class Runner {
      */
     public async run(): Promise<void> {
         const autoMutator: AutoMutator = new AutoMutator({
-            mutationsProvider: new StylelintMutationsProvider(this.settings)
+            mutationsProvider: new StylelintMutationsProvider({
+                stylelintSettings: this.settings
+            })
         });
 
         return autoMutator.run();
