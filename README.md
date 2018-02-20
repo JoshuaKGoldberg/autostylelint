@@ -1,4 +1,6 @@
 # autostylelint
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/automutate/autostylelint.svg)](https://greenkeeper.io/)
 [![npm](https://img.shields.io/npm/v/autostylelint.svg)](https://www.npmjs.com/package/autostylelint)
 
 ***Work in progress***
